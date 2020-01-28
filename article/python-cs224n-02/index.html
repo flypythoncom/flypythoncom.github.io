@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <head><meta name="generator" content="Hexo 3.9.0">  
+  <!-- Title -->
+  
+  <meta charset="utf-8">
+  <meta name="applicable-device" content="pc,mobile">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, viewport-fit=cover">
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+  <meta name="author" content="flypython">
+  <meta name="designer" content="flypython">
+  <meta name="keywords" content="cs224n 解答拾遗：word embedding 之SVD分解,FlyPython - 专业的Python学习社区,flypython, 飞蟒，飞蟒Python，Python入门，Python自动化，Python日报">
+  <meta property="og:title" content="cs224n 解答拾遗：word embedding 之SVD分解 | FlyPython - 专业的Python学习社区">
+  <meta property="og:site_name" content="http://www.flypython.com">
+  
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="http://www.flypython.com/article/python-cs224n-02/">
+    <meta property="og:image" content="http://www.flypython.com/images/cs224n-02.png">
+    <meta property="og:description" content="cs224n 解答拾遗：word embedding 之SVD分解--cs224n解答">
+    <meta name="description" content="cs224n 解答拾遗：word embedding 之SVD分解--cs224n解答">
+  
+  <meta name="rating" content="general"> 
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="format-detection" content="telephone=yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="robots" content="index, follow">
+  <link rel="icon" href="/images/favicon.ico">
+  <title>cs224n 解答拾遗：word embedding 之SVD分解 | FlyPython - 专业的Python学习社区</title>
+  <link rel="stylesheet" href="/css/f25.css">
+  <link rel="stylesheet" href="/css/highlight.css">
+  
+    <link rel="stylesheet" href="/css/gitalk.css">
+  
+  
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-147288599-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-147288599-1');
+</script>
+
+</head>
+</head>
+<body>
+    <header class="wrapper header-wrapper">
+    <div class="container header-nav-wrapper">
+        <div class="logo"><a href="/" title="FlyPython - 专业的Python学习社区"><h1 class="title">FlyPython</h1></a></div>
+        <nav class="nav-wrapper">
+            
+                <a href="https://flypython.com/python" title="飞蟒微课堂">飞蟒微课堂</a>
+            
+                <a href="https://flypython.com/flypython_daily" title="Python日报">Python日报</a>
+            
+                <a href="https://flypython.com/PyCon/" title="PyCon">PyCon</a>
+            
+                <a href="https://github.com/flypythoncom" title="Github">Github</a>
+            
+                <a href="/article/about" title="关于">关于</a>
+            
+        </nav>
+        <span class="btn-menu" id="J_header_menu">
+            <div class="inner">
+                <span class="line line-01"></span>
+                <span class="line line-02"></span>
+                <span class="line line-03"></span>
+            </div>
+        </span>
+        <div class="wrapper mb-nav-wrapper" id="J_header_menu_list">
+            <nav class="wrapper mb-nav-container">
+                
+                    <a href="https://flypython.com/python" title="飞蟒微课堂">飞蟒微课堂</a>
+                
+                    <a href="https://flypython.com/flypython_daily" title="Python日报">Python日报</a>
+                
+                    <a href="https://flypython.com/PyCon/" title="PyCon">PyCon</a>
+                
+                    <a href="https://github.com/flypythoncom" title="Github">Github</a>
+                
+                    <a href="/article/about" title="关于">关于</a>
+                
+            </nav>
+        </div>
+    </div>
+</header>
+    <section class="body-wrapper">
+        <section class="wrapper post-banner">
+    <div class="container post-banner-container">
+        <h2 class="wrapper title">cs224n 解答拾遗：word embedding 之SVD分解</h2>
+        <div class="wrapper tips">
+            <span>Author：</span><span>flypython</span> | <span>Date: </span><span>2020-01-02</span> | <span>Category：</span><span><a href="/fly/自然语言处理/" title="自然语言处理">自然语言处理</a><a href="/fly/自然语言处理/cs224n/" title="cs224n">cs224n</a></span>
+        </div>
+    </div>
+</section>
+<section class="wrapper main-wrapper">
+    <article class="sub-container post-content">
+        <blockquote>
+<p>老师，请问共现矩阵奇异值分解后为什么是用U的行来做word embedding呢?</p>
+</blockquote>
+<p>cs224n课程第一周里，提到了2种生成word embedding的方法。<br>一种是基于word2vec的神经网络生成词向量的方法。<br>另一种是基于统计的词向量生成的方法：使用共现矩阵，再进行SVD分解。</p>
+<p><img src="https://raw.githubusercontent.com/jcjview/jcjview.github.io/master/img/count_based.png" alt></p>
+<p>首先要说明，这2种方法输出的word embedding  都是distributed representation(稠密表达)。</p>
+<p>其次值得说的是，这2种方法各有优缺点（可能面试里会问），在glove方法中，综合进行了两种算法，达到最优的效果。</p>
+<p>那么，我们这里详细探讨一下利用SVD生成词向量的过程，解答上面提到的问题。</p>
+<blockquote>
+<p>共现矩阵奇异值分解后为什么是用U的行来做word embedding</p>
+</blockquote>
+<h3 id="1-生成共现矩阵（Window-based-Co-occurrence-Matrix）"><a href="#1-生成共现矩阵（Window-based-Co-occurrence-Matrix）" class="headerlink" title="1.生成共现矩阵（Window based Co-occurrence Matrix）"></a>1.生成共现矩阵（Window based Co-occurrence Matrix）</h3><p>构造一个矩阵X，这个矩阵的大小是 $V*V$ ，这里V是词表的长度。这个矩阵称之为共现矩阵。</p>
+<p>我们要统计，每个中心词在左右k个窗口的范围内，上下文词出现的词频。于是这里的共现矩阵，第一个维度（列），代表这个中心词，第二个维度（行）代表这个中心词对应的上下文词。<br>$X={x_{ij}}$为第i个词作为中心词时，对应第j个词作为其上下文词时候的词频。</p>
+<p>我们还是用课上的例子，有3句话：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">I enjoy flying。</span><br><span class="line">I like NLP。</span><br><span class="line">I like deep learning。</span><br></pre></td></tr></table></figure>
+
+<p>假设这里k=1，统计的共现矩阵X为：<br><img src="https://raw.githubusercontent.com/jcjview/jcjview.github.io/master/img/Window_based_Co-occurrence_Matrix1.png" alt></p>
+<p>可以看出，这里的共现矩阵X为对称矩阵，也就是对中心词like，enjoy的出现次数是等于对于中心词enjoy，like的出现次数。</p>
+<h3 id="2-SVD分解的过程"><a href="#2-SVD分解的过程" class="headerlink" title="2.SVD分解的过程"></a>2.SVD分解的过程</h3><p>假设X的size是$V<em>V$,那么U的矩阵是$V</em>K$,奇异值矩阵S是$K<em>K$,而$V^T$的矩阵size 是$K</em>V$.<br>这里V是词表长度，上面解释了，K是指最后需要输出的词向量维度，一般我们取100-300之间的一个值。</p>
+<p>SVD分解公式可以写作<br>$X=USV^T$<br>写成分量式为：</p>
+<p>$x_{ij}= \sum_{k=1}^n u_{ij}s_kv_{jk}$</p>
+<p>那么从这个公式看出，对于每个样本word $x_{ij}$ 与$u_{ij}$是对于的，而不是与$v^T_j$对应，$v^T_j$与每个维度对应。<br><img src="https://raw.githubusercontent.com/jcjview/jcjview.github.io/master/img/svd1.png" alt></p>
+<h4 id="这里需要解释一下我们是如何得到SVD分解公式的："><a href="#这里需要解释一下我们是如何得到SVD分解公式的：" class="headerlink" title="这里需要解释一下我们是如何得到SVD分解公式的："></a>这里需要解释一下我们是如何得到SVD分解公式的：</h4><p>由线性代数基本知识可知，对于任意矩阵X（size $V*V$ ）来说，我们可以进行奇异值分解，</p>
+<p>$X=U \Lambda V^T$，</p>
+<p>这里， $U, V, \Lambda$都是size $V*V$ 的对角矩阵，并且每个值都是非负实数，按大小从大到小排列。</p>
+<p><img src="https://raw.githubusercontent.com/jcjview/jcjview.github.io/master/img/svd2.png" alt></p>
+<p>那么我们对$\Lambda$进行降维，只保留前K个值，这样U和V也会跟着变，从维度上看，矩阵U去掉了后面的一些列，变成了$V<em>K$;矩阵$V^T$，去掉了前面的一些行，变成了$K</em>V$（实质上做了空间变换，而不是简单的去除一些数据）。也就是上面的图：<br><img src="https://raw.githubusercontent.com/jcjview/jcjview.github.io/master/img/svd1.png" alt></p>
+<p>这里就解释了，为什么是用U的行来做word embedding。</p>
+<h3 id="3-如果U对应的词向量，那么V对应的是什么呢？"><a href="#3-如果U对应的词向量，那么V对应的是什么呢？" class="headerlink" title="3.如果U对应的词向量，那么V对应的是什么呢？"></a>3.如果U对应的词向量，那么V对应的是什么呢？</h3><p>还有一个问题，如果U对应的词向量，那么V对应的是什么呢？对于词共现矩阵来说，V的意义还不是很清晰，我们考虑这样一个矩阵：</p>
+<p>词-文档矩阵 Word-Document Matrix，行是所有的词，维度为V，列是每个文档，维度为M。</p>
+<p>对这样一个矩阵进行SVD分解，并降维到K个奇异值上取值，</p>
+<p><img src="https://raw.githubusercontent.com/jcjview/jcjview.github.io/master/img/lsa1.png" alt></p>
+<p>SVD分解公式可以写作<br>$X=U\Sigma V^T$</p>
+<p>U的矩阵size$V*K$,</p>
+<p>$V^T$的矩阵size 是$K*V$</p>
+<p>写成分量式为：</p>
+<p>$x_{ij}= \sum_{k=1}^n u_{ij}\sigma_kv_{jk}$</p>
+<p>$u_{ij}$  对应的第i个词和第j个主题的相关度，$u_{i}是词的主题向量$。</p>
+<p>$v_{jk}$ 对应第j个文档和第k个主题的相关度，<strong>所以$v_j$是第j个文档的文档向量。</strong></p>
+<p>这样就说明了V在SVD分解的意义。</p>
+
+    </article>
+    <div class="sub-container gitalk-wrapper" id="gitalk-container"></div>
+</section>
+        
+<div class="tips-top-wrapper">
+    <span class="tip-top-container" onclick="scrollToWindowTop()">
+        <span class="l-bar"></span>
+        <span class="r-bar"></span>
+    </span>
+</div>
+<footer class="wrapper footer-wrapper">
+    <div class="container"><span class="copyright">&copy; 2020 FlyPython . All Rights Reserved.</span></div>
+</footer>
+    </section>
+    <script src="/js/f25.js"></script>
+    
+        <script src="/js/gitalk.min.js"></script>
+        
+<script>
+    var gitalkAdmin = 'xxg1413'.split(',');
+    var gitalk = new Gitalk({
+        clientID: 'd0e566bfc45c0b852c6c',
+        clientSecret: '6b69b3a841c85a6223e5a904c47f5e2d84322980',
+        repo: 'gitalk',
+        owner: 'flypythoncom',
+        admin: gitalkAdmin,
+        id: location.pathname.length > 50 ? location.pathname.substr(0,50) : location.pathname,      // Ensure uniqueness and length less than 50
+        distractionFreeMode: false  // Facebook-like distraction free mode
+    });
+    gitalk.render('gitalk-container');
+</script>
+
+    
+</body>
+</html>
