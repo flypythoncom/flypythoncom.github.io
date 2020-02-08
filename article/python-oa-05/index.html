@@ -31,8 +31,6 @@
   <link rel="stylesheet" href="/css/f25.css">
   <link rel="stylesheet" href="/css/highlight.css">
   
-    <link rel="stylesheet" href="/css/gitalk.css">
-  
   
 <!-- Global site tag (gtag.js) - Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-147288599-1"></script>
@@ -137,23 +135,6 @@
 </footer>
     </section>
     <script src="/js/f25.js"></script>
-    
-        <script src="/js/gitalk.min.js"></script>
-        
-<script>
-    var gitalkAdmin = 'xxg1413'.split(',');
-    var gitalk = new Gitalk({
-        clientID: 'd0e566bfc45c0b852c6c',
-        clientSecret: '6b69b3a841c85a6223e5a904c47f5e2d84322980',
-        repo: 'gitalk',
-        owner: 'flypythoncom',
-        admin: gitalkAdmin,
-        id: location.pathname.length > 50 ? location.pathname.substr(0,50) : location.pathname,      // Ensure uniqueness and length less than 50
-        distractionFreeMode: false  // Facebook-like distraction free mode
-    });
-    gitalk.render('gitalk-container');
-</script>
-
     
 </body>
 </html>
