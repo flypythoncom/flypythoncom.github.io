@@ -1,0 +1,14 @@
+baseURL = 'https://flypython.com'
+languageCode = 'en-us'
+title = 'flypython'
+
+
+theme = ["reveal-hugo"]
+
+[markup.goldmark.renderer]
+unsafe = true
+
+[outputFormats.Reveal]
+baseName = "index"
+mediaType = "text/html"
+isHTML = true
